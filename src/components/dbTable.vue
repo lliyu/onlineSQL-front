@@ -1,12 +1,26 @@
    <template>
     <div id="db">
-        <div class="layui-form layui-input-block">
+      <div class="layui-inline">
+      <label class="layui-form-label">当前链接：</label>
+        <div class="layui-form layui-input-inline">
             <select lay-verify="required">
+              <!-- <option v-for="(option,index) in options" v-bind:key="index" v-bind:value="option.dbName">
+                {{ option.dbName }}
+              </option>  -->
+              <option>127.0.0.1</option>
+            </select>
+        </div>
+      </div>
+      <div class="layui-inline">
+        <label class="layui-form-label">数据表：</label>
+        <div class="layui-form layui-input-inline">
+            <select lay-verify="required" v-model="res">
               <option v-for="(option,index) in options" v-bind:key="index" v-bind:value="option.dbName">
                 {{ option.dbName }}
               </option> 
             </select>
         </div>
+      </div>
         <table class="layui-hide" id="tables"></table>
     </div>
 </template>
@@ -18,16 +32,20 @@ export default {
   data() {
     return {
       tableData: {},
-      options: {}
+      options: {},
+      res:{}
     };
   },
   mounted: function() {
-    this.loadTables();
     this.getSelectData();
+  },
+  created:function(){
+    this.loadTables();
   },
   methods: {
     loadTables: function() {
       layui.use(["table"], function() {
+        console.log(this.res);
         var table = layui.table;
         table.render({
           elem: "#tables",
@@ -56,6 +74,7 @@ export default {
           //这里如果直接使用常规的赋值而不是使用箭头函数的话会报错 options  undefined
           //也可以将this在外面重新定义 var _this = this;
           this.options = res.data.data;
+          this.res = res.data.data[0];
         })
         .catch(function(error) {
           console.log(error);

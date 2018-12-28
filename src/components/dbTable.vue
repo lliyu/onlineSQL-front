@@ -1,6 +1,6 @@
 <template>
   <el-container style="height: 800px; border: 1px solid #eee">
-    <el-aside width="400px" style="background-color: rgb(238, 241, 246)">
+    <el-aside width="300px" style="background-color: rgb(238, 241, 246)">
       <el-menu :default-openeds="['1','2','3']">
         <el-submenu index="1">
           <template slot="title">
@@ -59,7 +59,7 @@
             type="textarea"
             :autosize="{ minRows: 2, maxRows: 10}"
             placeholder="请输入内容"
-            v-model="sql"></el-input>
+            v-model="sql" class="sql-state-input"></el-input>
           <el-button type="primary" @click="format">格式化SQL</el-button>
           <el-button type="primary" @click="select">查询</el-button>
         </div>
@@ -110,6 +110,17 @@
 .el-aside {
   color: #333;
 }
+.el-submenu__title{
+  padding-left: 43px;
+  text-align: left;
+}
+.el-menu-item{
+  padding-left: 48px;
+  text-align: left;
+}
+.sql-state-input{
+  margin-bottom: 20px;
+}
 </style>
 <script>
 export default {
@@ -125,17 +136,13 @@ export default {
       tables: [],
       header: [],
       dbselected: "",
-      dbName: "dn_mall_dep",
+      dbName: "information_schema",
       ip: "127.0.0.1",
-      tableName: ""
+      tableName: "tables"
     };
   },
   created: function() {
     this.getSelectData();
-  },
-  mounted: function() {
-    // this.getTables();
-    // this.loadRows();
   },
   methods: {
     loadRows: function() {
@@ -159,7 +166,7 @@ export default {
         })
         .catch(function(error) {
           console.log(error);
-      });
+        });
     },
     getTables: function() {
       var _this = this;

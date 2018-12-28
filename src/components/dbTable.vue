@@ -1,32 +1,242 @@
 <template>
-    <table class="layui-hide" id="test"></table>
+  <el-container style="height: 800px; border: 1px solid #eee">
+    <el-aside width="400px" style="background-color: rgb(238, 241, 246)">
+      <el-menu :default-openeds="['1','2','3']">
+        <el-submenu index="1">
+          <template slot="title">
+            <i class="el-icon-message"></i>IP
+          </template>
+          <el-menu-item-group>
+            <el-menu-item index="1-1">127.0.0.1</el-menu-item>
+            <el-menu-item index="1-2">localhost</el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+        <el-submenu index="2">
+          <template slot="title">
+            <i class="el-icon-menu"></i>数据库
+          </template>
+          <el-menu-item-group>
+            <el-menu-item
+              v-for="item in options"
+              @click="selectVal(item.dbName)"
+              :key="item.dbName"
+              index="3-1"
+            >{{item.dbName}}</el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+        <el-submenu index="3">
+          <template slot="title">
+            <i class="el-icon-setting"></i>数据表
+          </template>
+          <el-menu-item-group>
+            <el-menu-item
+              v-for="item in tables"
+              @click="getTableInfo(item)"
+              :key="item"
+              index="3-1"
+            >{{item}}</el-menu-item>
+          </el-menu-item-group>
+        </el-submenu>
+      </el-menu>
+    </el-aside>
+
+    <el-container>
+      <el-header style="text-align: right; font-size: 12px">
+        <el-dropdown>
+          <i class="el-icon-setting" style="margin-right: 15px"></i>
+          <el-dropdown-menu slot="dropdown">
+            <el-dropdown-item>查看</el-dropdown-item>
+            <el-dropdown-item>新增</el-dropdown-item>
+            <el-dropdown-item>删除</el-dropdown-item>
+          </el-dropdown-menu>
+        </el-dropdown>
+        <span>admin</span>
+      </el-header>
+
+      <el-main>
+        <div class="sql-state">
+          <el-input
+            type="textarea"
+            :autosize="{ minRows: 2, maxRows: 10}"
+            placeholder="请输入内容"
+            v-model="sql"></el-input>
+          <el-button type="primary" @click="format">格式化SQL</el-button>
+          <el-button type="primary" @click="select">查询</el-button>
+        </div>
+        <el-table class="tables" :data="tableData" border>
+          <!-- 动态表头 -->
+          <el-table-column
+            v-for="(item, index) in header"
+            :key="item"
+            :label="item"
+            :property="item"
+            width="150"
+          >
+            <template slot-scope="scope">
+              <span>{{scope.row[header[index]]}}</span>
+            </template>
+          </el-table-column>
+          <el-table-column align="right" width="200">
+            <template slot-scope="scope">
+              <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">Edit</el-button>
+              <el-button
+                size="mini"
+                type="danger"
+                @click="handleDelete(scope.$index, scope.row)"
+              >Delete</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-pagination
+          background
+          @current-change="handleCurrentChange"
+          :current-page="page"
+          :page-size="limit"
+          layout="prev, pager, next"
+          :total="count"
+        ></el-pagination>
+      </el-main>
+    </el-container>
+  </el-container>
 </template>
 
-          
-  <script>
-  
-    export default {
-      name: 'dbTable',
-      data() {
-        return {
-          tableData: {}
-        }
-      },
-      mounted:function(){
-          layui.use('table', function(){
-  var table = layui.table;
-  
-  table.render({
-    elem: '#test'
-    ,url:'/dbs/list'
-    ,page:true
-    ,cellMinWidth: 80 //全局定义常规单元格的最小宽度，layui 2.2.1 新增
-    ,cols: [[
-      {field:'id', width:80, title: 'ID', sort: true}
-      ,{field:'dbName', title: '数据库名称', width: '30%', minWidth: 100} //minWidth：局部定义当前单元格的最小宽度，layui 2.2.1 新增
-    ]]
-  });
-});
+<style>
+.el-header {
+  background-color: #b3c0d1;
+  color: #333;
+  line-height: 60px;
+}
+
+.el-aside {
+  color: #333;
+}
+</style>
+<script>
+export default {
+  name: "dbTable",
+  data() {
+    return {
+      page: 1,
+      limit: 10,
+      count: 0,
+      sql: "",
+      tableData: [],
+      options: [],
+      tables: [],
+      header: [],
+      dbselected: "",
+      dbName: "dn_mall_dep",
+      ip: "127.0.0.1",
+      tableName: ""
+    };
+  },
+  created: function() {
+    this.getSelectData();
+  },
+  mounted: function() {
+    // this.getTables();
+    // this.loadRows();
+  },
+  methods: {
+    loadRows: function() {
+      var _this = this;
+      var url =
+        "/dbs/rows" + "?dbName=" + _this.dbName + "&ip=" + _this.ip + "&tableName=" + _this.tableName;
+      //分页
+      url = url + "&page=" + _this.page + "&limit=" + _this.limit;
+      _this.axios
+        .get(url)
+        .then(res => {
+          //在请求执行成功后执行回调函数中的内容，回调函数处于其它函数的内部this不会与任何对象绑定，为undefined。
+          //这里如果直接使用常规的赋值而不是使用箭头函数的话会报错 options  undefined
+          //也可以将this在外面重新定义 var _this = this;
+          _this.tableData = res.data.data;
+          _this.count = res.data.count;
+          this.header = [];
+          for (var i in res.data.data[0]) {
+            this.header.push(i);
           }
+        })
+        .catch(function(error) {
+          console.log(error);
+      });
+    },
+    getTables: function() {
+      var _this = this;
+      var url =
+        "/dbs/tables" + "?dbName=" + _this.dbName + "&ip=" + _this.ip + "&tableName=" + _this.tableName;
+      _this.axios
+        .get(url)
+        .then(res => {
+          _this.tables = res.data.data;
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    },
+    //获取数据库列表
+    getSelectData: function() {
+      var _this = this;
+      var url =
+        "/dbs/list" + "?dbName=" + _this.dbName + "&ip=" + _this.ip + "&tableName=" + _this.tableName;
+      //分页
+      url = url + "&page=" + _this.page + "&limit=" + _this.limit;
+      _this.axios
+        .get(url)
+        .then(res => {
+          _this.options = res.data.data;
+          this.dbselected = _this.options[0].dbName;
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    },
+    //sql语句查询
+    select: function() {
+      var _this = this;
+      var url =
+        "/dbs/select" + "?dbName=" + _this.dbName + "&ip=" + _this.ip + "&tableName=" + _this.tableName;
+      //sql 查询
+      url = url + "&sql=" + this.sql;
+      _this.axios
+        .get(url)
+        .then(res => {
+          _this.tableData = res.data.data;
+          _this.count = res.data.count;
+          this.header = [];
+          for (var i in res.data.data[0]) {
+            this.header.push(i);
+          }
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    },
+    format: function() {
+      var _this = this;
+      _this.axios.get('/dbs/format?sql='+_this.sql).then(function(res){
+        _this.sql = res.data.data;
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+    },
+    selectVal: function(value) {
+      this.dbName = value;
+      this.getTables();
+    },
+    getTableInfo: function(value) {
+      //初始化数据
+      this.page = 1;
+      this.tableData = [];
+      this.header = [];
+      this.tableName = value;
+      this.loadRows();
+    },
+    handleCurrentChange: function(value) {
+      this.page = value;
+      this.loadRows();
     }
-  </script>
+  }
+};
+</script>

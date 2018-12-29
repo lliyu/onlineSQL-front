@@ -1,6 +1,6 @@
 <template>
   <el-container style="height: 800px; border: 1px solid #eee">
-    <el-aside width="300px" style="background-color: rgb(238, 241, 246)">
+    <el-aside class="scroll"  width="300px" style="background-color: rgb(238, 241, 246)">
       <el-menu :default-openeds="['1','2','3']">
         <el-submenu index="1">
           <template slot="title">
@@ -53,6 +53,7 @@
         <span>admin</span>
       </el-header>
 
+<div>
       <el-main>
         <div class="sql-state">
           <el-input
@@ -66,24 +67,20 @@
         <el-table class="tables" :data="tableData" border>
           <!-- 动态表头 -->
           <el-table-column
+            align="center"
             v-for="(item, index) in header"
-            :key="item"
-            :label="item"
-            :property="item"
-            width="150"
-          >
+            :key="item.columnName"
+            :label="item.columnName"
+            :property="item.columnName"
+            width="150">
             <template slot-scope="scope">
-              <span>{{scope.row[header[index]]}}</span>
+              <center>{{scope.row[header[index].columnName]}}</center>
             </template>
           </el-table-column>
-          <el-table-column align="right" width="200">
+          <el-table-column align="center" label="操作" width="200">
             <template slot-scope="scope">
               <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">Edit</el-button>
-              <el-button
-                size="mini"
-                type="danger"
-                @click="handleDelete(scope.$index, scope.row)"
-              >Delete</el-button>
+              <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">Delete</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -92,36 +89,15 @@
           @current-change="handleCurrentChange"
           :current-page="page"
           :page-size="limit"
-          layout="prev, pager, next"
+          layout="total, prev, pager, next"
           :total="count"
         ></el-pagination>
       </el-main>
+      </div>
     </el-container>
   </el-container>
 </template>
 
-<style>
-.el-header {
-  background-color: #b3c0d1;
-  color: #333;
-  line-height: 60px;
-}
-
-.el-aside {
-  color: #333;
-}
-.el-submenu__title{
-  padding-left: 43px;
-  text-align: left;
-}
-.el-menu-item{
-  padding-left: 48px;
-  text-align: left;
-}
-.sql-state-input{
-  margin-bottom: 20px;
-}
-</style>
 <script>
 export default {
   name: "dbTable",
@@ -160,9 +136,8 @@ export default {
           _this.tableData = res.data.data;
           _this.count = res.data.count;
           this.header = [];
-          for (var i in res.data.data[0]) {
-            this.header.push(i);
-          }
+          //填充表头
+          this.headers();
         })
         .catch(function(error) {
           console.log(error);
@@ -223,6 +198,18 @@ export default {
       var _this = this;
       _this.axios.get('/dbs/format?sql='+_this.sql).then(function(res){
         _this.sql = res.data.data;
+      })
+      .catch(function (error) {
+        console.log(error);
+      });
+    },
+    //填充表头
+    headers: function() {
+      var _this = this;
+      var url =
+        "/dbs/table/header" + "?dbName=" + _this.dbName + "&ip=" + _this.ip + "&tableName=" + _this.tableName;
+        _this.axios.get(url).then(function(res){
+        _this.header = res.data.data;
       })
       .catch(function (error) {
         console.log(error);

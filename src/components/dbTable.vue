@@ -133,9 +133,9 @@ export default {
           //在请求执行成功后执行回调函数中的内容，回调函数处于其它函数的内部this不会与任何对象绑定，为undefined。
           //这里如果直接使用常规的赋值而不是使用箭头函数的话会报错 options  undefined
           //也可以将this在外面重新定义 var _this = this;
-          this.header = [];
+          _this.header = [];
           //填充表头
-          this.headers();
+          _this.headers();
           _this.tableData = res.data.data;
           _this.count = res.data.count;
           
@@ -186,9 +186,10 @@ export default {
         .then(res => {
           _this.tableData = res.data.data;
           _this.count = res.data.count;
-          this.header = [];
+          _this.header = [];
           for (var i in res.data.data[0]) {
-            this.header.push(i);
+            //构造对象
+            _this.header.push({columnName:i});
           }
         })
         .catch(function(error) {

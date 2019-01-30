@@ -80,7 +80,7 @@
           <el-table-column align="center" label="操作" width="200">
             <template slot-scope="scope">
               <el-button size="mini" @click="handleEdit(scope.$index, scope.row)">Edit</el-button>
-              <el-button size="mini" type="danger" @click="handleDelete(scope.$index, scope.row)">Delete</el-button>
+              <el-button type="danger" @click="handleDelete(scope.$index, scope.row)" icon="el-icon-delete" circle ></el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -181,19 +181,30 @@ export default {
         "/dbs/select" + "?dbName=" + _this.dbName + "&ip=" + _this.ip + "&tableName=" + _this.tableName;
       //sql 查询
       url = url + "&sql=" + this.sql;
-      _this.axios
-        .get(url)
-        .then(res => {
-          _this.tableData = res.data.data;
-          _this.count = res.data.count;
-          _this.header = [];
-          for (var i in res.data.data[0]) {
-            //构造对象
-            _this.header.push({columnName:i});
+        _this.axios.get(url).then(res => {
+            if(res.data.code != 200){
+              _this.$message({
+                showClose:true,
+                message:res.data.msg,
+                type:'error'
+            });
+          }else{
+            _this.tableData = res.data.data;
+            _this.count = res.data.count;
+            _this.header = [];
+            for (var i in res.data.data[0]) {
+              //构造对象
+              _this.header.push({columnName:i});
+            }
           }
+          
         })
         .catch(function(error) {
-          console.log(error);
+          _this.$message({
+              showClose:true,
+              message:error.msg,
+              type:'error'
+          });
         });
     },
     format: function() {
@@ -232,6 +243,9 @@ export default {
     handleCurrentChange: function(value) {
       this.page = value;
       this.loadRows();
+    },
+    handleDelete: function(index, row){
+      console.log(index);
     }
   }
 };
